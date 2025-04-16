@@ -106,14 +106,14 @@ void drawAhiOverlay() {
     AhrsSprite.fillRect(ax - 80, ay - 1, 45, 3, TFT_YELLOW);
     AhrsSprite.fillRect(ax + 35, ay - 1, 45, 3, TFT_YELLOW);
     AhrsSprite.fillCircle(ax, ay, 4, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 30, ay - 81, 61, 3, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 10, ay - 61, 21, 3, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 20, ay - 41, 41, 3, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 10, ay - 21, 21, 3, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 30, ay + 81, 61, 3, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 10, ay + 61, 21, 3, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 20, ay + 41, 41, 3, TFT_YELLOW);
-    AhrsSprite.fillRect(ax - 10, ay + 21, 21, 3, TFT_YELLOW);
+    //AhrsSprite.fillRect(ax - 30, ay - 121, 61, 3, TFT_YELLOW);
+    AhrsSprite.fillRect(ax - 10, ay - 91, 21, 3, TFT_YELLOW);
+    AhrsSprite.fillRect(ax - 20, ay - 61, 41, 3, TFT_YELLOW);
+    AhrsSprite.fillRect(ax - 10, ay - 31, 21, 3, TFT_YELLOW);
+    //AhrsSprite.fillRect(ax - 30, ay + 121, 61, 3, TFT_YELLOW);
+    AhrsSprite.fillRect(ax - 10, ay + 91, 21, 3, TFT_YELLOW);
+    AhrsSprite.fillRect(ax - 20, ay + 61, 41, 3, TFT_YELLOW);
+    AhrsSprite.fillRect(ax - 10, ay + 31, 21, 3, TFT_YELLOW);
 }
 
 void updateAHI(float roll, float pitch) {

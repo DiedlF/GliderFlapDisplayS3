@@ -1,6 +1,5 @@
 // TODOs:
 // Kalibrier-Routine
-// Referenzlinien im AHI
 // Larus True Heading HCHDT
 // SpeedToFly Pfeil
 
@@ -67,14 +66,12 @@ bool LarusWindChanged = true; // Start true to force initial draw
 uint16_t LarusWindSpeedInst = 0, LarusWindDirInst = 0, LarusWindSpeedAvg = 0, LarusWindDirAvg = 0;
 uint16_t SensorValue = 0;
 int Offset1 = 0, Offset2 = 0, Offset3 = 0, Offset4 = 0, Offset5 = 0, Offset6 = 0, Offset7 = 0;
-const float WIND_SPEED_DISPLAY_SCALE = 3.0 / 4.0;
 
 // SD Card related
 bool sdAvail = false;
 File sdFile;
 unsigned long recDataKB = 0;
 
-int TestWind = 0;
 
 // --- Helper Function for Demo Values ---
 void updateDemoValues(float &roll, float &pitch, int &yaw,
@@ -244,7 +241,7 @@ void loop() {
           // Update Wind displays if needed
           if (forceWindUpdate) {
               LarusWindChanged = false; // Reset flag only when update happens
-              updateWindDisplay(currentWindDirInst, currentWindSpeedInst * WIND_SPEED_DISPLAY_SCALE, currentWindDirAvg, currentWindSpeedAvg * WIND_SPEED_DISPLAY_SCALE, currentYaw);
+              updateWindDisplay(currentWindDirInst, currentWindSpeedInst, currentWindDirAvg, currentWindSpeedAvg, currentYaw);
               updateBestEnergyDisplay(currentWindSpeedAvg, currentWindDirAvg, currentWindSpeedInst, currentWindDirInst, currentYaw);
            }
 

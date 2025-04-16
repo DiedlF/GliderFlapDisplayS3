@@ -11,6 +11,8 @@ extern LilyGo_Class amoled;
 float sin_lut[LUT_SIZE];
 float cos_lut[LUT_SIZE];
 
+const float WIND_SPEED_DISPLAY_SCALE = 0.9; // Scale factor for wind speed display
+
 void precomputeTrigLUT() {
     Serial.print("Precomputing Trig LUT...");
     for (int i = 0; i < LUT_SIZE; ++i) {
@@ -87,9 +89,9 @@ void drawWind(int InstDir, int InstSpeed, int AvgDir, int AvgSpeed, int Yaw) {
 
     // Calculate points for Average Wind (Blue)
     int avgTipX = centerX;
-    int avgTipY = centerY - round(AvgSpeed * 1.25);
+    int avgTipY = centerY - (int)(AvgSpeed * WIND_SPEED_DISPLAY_SCALE);
     int avgBase1X = centerX - baseWidth;
-    int avgBase1Y = centerY + round(AvgSpeed * 1.25);
+    int avgBase1Y = centerY + (int)(AvgSpeed * WIND_SPEED_DISPLAY_SCALE);
     int avgBase2X = centerX + baseWidth;
     int avgBase2Y = avgBase1Y; // Same Y as base1
 
@@ -101,9 +103,9 @@ void drawWind(int InstDir, int InstSpeed, int AvgDir, int AvgSpeed, int Yaw) {
 
     // Calculate points for Instant Wind (White)
     int instTipX = centerX;
-    int instTipY = centerY - round(InstSpeed * 1.25);
+    int instTipY = centerY - round(InstSpeed * 1.25 * WIND_SPEED_DISPLAY_SCALE);
     int instBase1X = centerX - baseWidth;
-    int instBase1Y = centerY + round(InstSpeed * 1.25);
+    int instBase1Y = centerY + round(InstSpeed * 1.25 * WIND_SPEED_DISPLAY_SCALE);
     int instBase2X = centerX + baseWidth;
     int instBase2Y = instBase1Y; // Same Y as base1
 
