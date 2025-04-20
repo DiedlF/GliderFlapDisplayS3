@@ -12,7 +12,7 @@ extern uint16_t LarusWindSpeedInst, LarusWindDirInst, LarusWindSpeedAvg, LarusWi
 
 extern bool sdAvail;
 extern File sdFile;
-extern unsigned long recDataKB;
+unsigned long recDataKB;
 
 void initGPS() {
     Serial1.begin(38400, SERIAL_8N1, RX_Butterfly, 40); // Connection to Butterfly Vario
@@ -62,8 +62,7 @@ void processGPS() {
             // For now, just read the values to clear the updated flag
              LarusWindAngle.value();
              LarusWindSpeed.value();
-             // Consider setting LarusWindChanged = true here as well if the display
-             // should react to invalid wind data (e.g., show dashes).
+
         }
     }
 }

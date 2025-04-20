@@ -2,6 +2,9 @@
 // Kalibrier-Routine
 // Larus True Heading HCHDT
 // SpeedToFly Pfeil
+// Update auf Info-Seite nur für Values
+// Config-Management auf SD-Karte (Kalibrierung, Wind-Skala, Demo-Mode,...)
+// Named Constants/Enums für Flap-Positionen, Mode, Pin-Nummern, Colors, ...
 
 const bool DEMO_MODE = true; // <<< Set to true to activate demo mode
 
@@ -55,22 +58,19 @@ TinyGPSCustom LarusSpeed(Larus, "PLARV", 4);
 
 // Global Variables
 volatile bool ModeChanged = false;
-const uint16_t MODE_STANDARD = 0; // Define mode constant
-const uint16_t MODE_INFO = 1;     // Define mode constant
-uint16_t mode = MODE_STANDARD; // Use constant for initial mode
-uint16_t wbkValue = 0;
+// const uint16_t MODE_STANDARD = 0; // Replaced by enum
+// const uint16_t MODE_INFO = 1;     // Replaced by enum
+uint16_t mode = (uint16_t)Mode::STANDARD; // Use enum for initial mode, cast needed for now
+uint16_t wbkValue = (uint16_t)FlapPosition::UNKNOWN; // Use enum for initial state, cast needed
 bool wbkChanged = true; // Start true to force initial draw
 uint16_t TftBrightness = 255;
 bool BrightnessChanged = false;
 bool LarusWindChanged = true; // Start true to force initial draw
 uint16_t LarusWindSpeedInst = 0, LarusWindDirInst = 0, LarusWindSpeedAvg = 0, LarusWindDirAvg = 0;
-uint16_t SensorValue = 0;
-int Offset1 = 0, Offset2 = 0, Offset3 = 0, Offset4 = 0, Offset5 = 0, Offset6 = 0, Offset7 = 0;
 
 // SD Card related
 bool sdAvail = false;
 File sdFile;
-unsigned long recDataKB = 0;
 
 
 // --- Helper Function for Demo Values ---
@@ -94,8 +94,9 @@ void updateDemoValues(float &roll, float &pitch, int &yaw,
     windSpeedInst = (speedInstBase < 0) ? 0 : (uint16_t)speedInstBase;
     windDirInst = (windDirAvg + (int)(15.0 * sin(timeMs * 0.001))) % 360;
 
-    int numFlapPositions = 8; // Example: 0 to 7 flap positions
-    wbkValue = (timeMs / 2000) % numFlapPositions + 1; // Change flap position every 2 seconds
+    int numFlapPositions = 8; // Number of actual flap positions (1-8)
+    // Cycle through FlapPosition enum values 1 through 8
+    wbkValue = (uint16_t)(((timeMs / 2000) % numFlapPositions) + (uint16_t)FlapPosition::S1);
 }
 
 // --- Setup ---
@@ -198,7 +199,7 @@ void loop() {
   uint16_t currentWindSpeedInst = 0, currentWindDirInst = 0, currentWindSpeedAvg = 0, currentWindDirAvg = 0;
 
 
-  if (DEMO_MODE && mode == MODE_STANDARD) { // Use mode constant
+  if (DEMO_MODE && mode == (uint16_t)Mode::STANDARD) { // Use enum constant with cast
       // Generate demo values using the helper function
       updateDemoValues(currentRoll, currentPitch, currentYaw,
                        currentWindSpeedInst, currentWindDirInst,
@@ -211,10 +212,15 @@ void loop() {
       forceWbkUpdate = true;
 
   } else { // Normal Operation (or other modes)
+      // Determine if updates are needed based on actual changes
+      forceAhiUpdate = LarusRoll.isUpdated() || LarusPitch.isUpdated() || wbkChanged; // wbk change forces AHI redraw
+      forceWindUpdate = LarusYaw.isUpdated() || LarusWindChanged;
+      forceWbkUpdate = wbkChanged;
+
       // Assign real values from sensors/GPS
       currentRoll = -atof(LarusRoll.value());
       currentPitch = -atof(LarusPitch.value());
-      currentYaw = atoi(LarusYaw.value()); // Use actual Yaw if available
+      currentYaw = atoi(LarusYaw.value());
       // Use global wind values updated by processGPS()
       currentWindDirAvg = LarusWindDirAvg;
       currentWindSpeedAvg = LarusWindSpeedAvg;
@@ -222,17 +228,12 @@ void loop() {
       currentWindSpeedInst = LarusWindSpeedInst;
       // Use global flap value updated by updateFlapSensor()
       currentWbkValue = wbkValue;
-
-      // Determine if updates are needed based on actual changes
-      forceAhiUpdate = LarusRoll.isUpdated() || LarusPitch.isUpdated() || wbkChanged; // wbk change forces AHI redraw
-      forceWindUpdate = LarusYaw.isUpdated() || LarusWindChanged;
-      forceWbkUpdate = wbkChanged;
   }
 
 
   // 3. Update Display Based on Mode
-  switch (mode) {
-      case MODE_STANDARD: // Use mode constant
+  switch ((Mode)mode) { // Cast mode to enum for switch
+      case Mode::STANDARD: // Use enum constant
           // Update AHI if needed
           if (forceAhiUpdate) {
                updateAHI(currentRoll, currentPitch);
@@ -252,7 +253,7 @@ void loop() {
           }
           break;
 
-      case MODE_INFO: // Use mode constant
+      case Mode::INFO: // Use enum constant
           // Update info display periodically (Demo mode doesn't affect this currently)
           static unsigned long lastInfoUpdate = 0;
           if (millis() - lastInfoUpdate > 500) { // Update every 500ms
@@ -261,7 +262,7 @@ void loop() {
           }
           break;
 
-      // case 2: // Setup Mode (Not implemented)
+      // case Mode::SETUP: // Example if a setup mode was added
       //     // updateSetupDisplay();
       //     break;
   }

@@ -9,6 +9,25 @@
 #include <Preferences.h>
 #include <SD.h> // Include SD library header
 
+// Define Enums for Modes and Flap Positions
+enum class Mode : uint16_t {
+    STANDARD = 0,
+    INFO = 1
+    // Add other modes here if needed
+};
+
+enum class FlapPosition : uint16_t {
+    UNKNOWN = 0, // Or a default/error state
+    S1 = 1,      // Speed 1
+    S = 2,       // Speed
+    M2 = 3,      // Minus 2
+    M1 = 4,      // Minus 1
+    ZERO = 5,    // Zero
+    P1 = 6,      // Plus 1
+    P2 = 7,      // Plus 2
+    L = 8        // Landing
+};
+
 // Declare global objects as extern
 extern LilyGo_Class amoled;
 extern TFT_eSPI tft;
@@ -54,13 +73,14 @@ extern uint16_t TftBrightness;
 extern bool BrightnessChanged;
 extern bool LarusWindChanged;
 extern uint16_t LarusWindSpeedInst, LarusWindDirInst, LarusWindSpeedAvg, LarusWindDirAvg;
-extern uint16_t SensorValue; // Raw sensor reading
-extern int Offset1, Offset2, Offset3, Offset4, Offset5, Offset6, Offset7; // For flap sensor hysteresis
 
 // SD Card related
 extern bool sdAvail;
 extern File sdFile;
 extern unsigned long recDataKB;
+
+// Flap Sensor related
+extern uint16_t SensorValue;
 
 // Wind display related (LUTs)
 #define LUT_SIZE 360
