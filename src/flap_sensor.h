@@ -3,8 +3,6 @@
 
 #include "globals.h"
 
-#define WBK_AnalogIn 18 // Define pin here
-
 // Declare functions
 void initFlapSensor(); // Placeholder if initialization needed
 void updateFlapSensor();

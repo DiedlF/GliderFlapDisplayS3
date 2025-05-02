@@ -4,9 +4,9 @@
 // SpeedToFly Pfeil
 // Update auf Info-Seite nur für Values
 // Config-Management auf SD-Karte (Kalibrierung, Wind-Skala, Demo-Mode,...)
-// Named Constants/Enums für Flap-Positionen, Mode, Pin-Nummern, Colors, ...
+// Named Constants für Pin-Nummern, Colors, ...
 
-const bool DEMO_MODE = true; // <<< Set to true to activate demo mode
+const bool DEMO_MODE = false; // <<< Set to true to activate demo mode
 
 #include "globals.h"
 #include "display_ahi.h"
@@ -58,8 +58,6 @@ TinyGPSCustom LarusSpeed(Larus, "PLARV", 4);
 
 // Global Variables
 volatile bool ModeChanged = false;
-// const uint16_t MODE_STANDARD = 0; // Replaced by enum
-// const uint16_t MODE_INFO = 1;     // Replaced by enum
 uint16_t mode = (uint16_t)Mode::STANDARD; // Use enum for initial mode, cast needed for now
 uint16_t wbkValue = (uint16_t)FlapPosition::UNKNOWN; // Use enum for initial state, cast needed
 bool wbkChanged = true; // Start true to force initial draw
@@ -101,8 +99,8 @@ void updateDemoValues(float &roll, float &pitch, int &yaw,
 
 // --- Setup ---
 void setup() {
-    delay(2000); // Wait for hardware initialization
     Serial.begin(115200);
+    delay(2000); // Wait for hardware initialization
     Serial.println("Starting Setup...");
 
     Serial.print("Initializing EEPROM...");
@@ -113,9 +111,9 @@ void setup() {
     Serial.print("Initializing Display...");
     if (amoled.beginAMOLED_241(true, true)) { // Initialize AMOLED display
         amoled.setBrightness(TftBrightness); // Set loaded brightness
-        Serial.println(" OK!");
+        Serial.println(" done!");
     } else {
-        Serial.println(" FAILED!");
+        Serial.println(" failed!");
         // Handle display initialization failure (e.g., halt or retry)
         while(1) delay(100);
     }
@@ -143,7 +141,7 @@ void setup() {
     ArrowSprite.fillSprite(TFT_BLACK); // Set default background (used as transparent color)
 
     img.createSprite(80, 35); // Sprite for numberBox utility
-    
+
     Serial.println(" done!");
 
     // Initialize Modules
