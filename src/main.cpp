@@ -194,6 +194,7 @@ void loop() {
   float currentPitch = 0.0;
   int currentYaw = 0;
   uint16_t currentWbkValue = 0;
+  bool currentWbkWarning = false;
   uint16_t currentWindSpeedInst = 0, currentWindDirInst = 0, currentWindSpeedAvg = 0, currentWindDirAvg = 0;
 
 
@@ -226,6 +227,50 @@ void loop() {
       currentWindSpeedInst = LarusWindSpeedInst;
       // Use global flap value updated by updateFlapSensor()
       currentWbkValue = wbkValue;
+
+      // --- Flap Speed Warning Logic ---
+      static unsigned long warningStartTime = 0;
+      static bool warningConditionActive = false;
+      static bool lastWbkWarning = false;
+      
+      bool currentWarningCondition = false;
+      if (currentWbkValue >= 1 && currentWbkValue <= 5) {
+          int airSpeed = -1;
+          if (strlen(LarusSpeed.value()) > 0) {
+              float s = atof(LarusSpeed.value());
+              if (s > 0) airSpeed = (int)s;
+          }
+          if (airSpeed == -1 && strlen(lxwp0Speed.value()) > 0) {
+              float s = atof(lxwp0Speed.value());
+              if (s > 0) airSpeed = (int)s;
+          }
+
+          if (airSpeed > 0) {
+              switch (currentWbkValue) {
+                  case 1: currentWarningCondition = (airSpeed < 210 || airSpeed > 280); break;
+                  case 2: currentWarningCondition = (airSpeed < 190 || airSpeed > 210); break;
+                  case 3: currentWarningCondition = (airSpeed < 170 || airSpeed > 190); break;
+                  case 4: currentWarningCondition = (airSpeed < 135 || airSpeed > 170); break;
+                  case 5: currentWarningCondition = (airSpeed < 100 || airSpeed > 135); break;
+              }
+          }
+      }
+
+      if (currentWarningCondition) {
+          if (!warningConditionActive) {
+              warningConditionActive = true;
+              warningStartTime = millis();
+          } else if (millis() - warningStartTime > 10000) {
+              currentWbkWarning = true;
+          }
+      } else {
+          warningConditionActive = false;
+      }
+      
+      if (currentWbkWarning != lastWbkWarning) {
+          forceWbkUpdate = true;
+          lastWbkWarning = currentWbkWarning;
+      }
   }
 
 
@@ -247,7 +292,7 @@ void loop() {
           // Update Flap display if needed
           if (forceWbkUpdate) {
               wbkChanged = false; // Reset flag only when update happens
-              updateWbkDisplay(currentWbkValue);
+              updateWbkDisplay(currentWbkValue, currentWbkWarning);
           }
           break;
 
@@ -260,11 +305,36 @@ void loop() {
           }
           break;
 
-      // case Mode::SETUP: // Example if a setup mode was added
-      //     // updateSetupDisplay();
-      //     break;
+      case Mode::CAL:
+          static unsigned long lastCalUpdate = 0;
+          static uint16_t calRecordedValues[8] = {0};
+          
+          if (calConfirmPressed) {
+              calConfirmPressed = false;
+              
+              if (calState == CalState::INIT) {
+                  calState = CalState::WAIT_S1;
+              } else if (calState >= CalState::WAIT_S1 && calState <= CalState::WAIT_L) {
+                  int idx = (int)calState - 1;
+                  calRecordedValues[idx] = SensorValue;
+                  
+                  calState = (CalState)((int)calState + 1);
+                  
+                  if (calState == CalState::DONE) {
+                      calculateAndSaveThresholds(calRecordedValues);
+                      updateCalDisplay(calState, SensorValue); // Show 'Done' briefly
+                      delay(2000); 
+                      
+                      mode = (uint16_t)Mode::STANDARD;
+                      ModeChanged = true;
+                  }
+              }
+          }
+          
+          if (millis() - lastCalUpdate > 100 && calState != CalState::DONE) { // 10Hz UI update
+              updateCalDisplay(calState, SensorValue);
+              lastCalUpdate = millis();
+          }
+          break;
   }
-
-  // Small delay to yield to other tasks
-  // delay(5); // Consider if needed
 }

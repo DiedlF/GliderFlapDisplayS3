@@ -11,6 +11,12 @@ uint16_t SensorValue;
 // ADS1115 instance
 Adafruit_ADS1115 ads;
 
+uint16_t flapThresholds[7];
+uint16_t flapHysteresis[7];
+
+const uint16_t defaultThresholds[7] = {458, 495, 545, 590, 810, 1150, 1800};
+const uint16_t defaultHyst[7] = {4, 5, 10, 20, 30, 50, 70};
+
 // Offsets remain internal
 static int Offset1, Offset2, Offset3, Offset4, Offset5, Offset6, Offset7;
 
@@ -25,10 +31,34 @@ void initFlapSensor() {
     }
     Serial.println("done!");
     ads.setGain(GAIN_ONE); // Set gain to GAIN_ONE (+/-4.096V)
-
     //ads.setDataRate(RATE_ADS1115_128SPS); // Set data rate to 128 SPS
 
     Offset1 = Offset2 = Offset3 = Offset4 = Offset5 = Offset6 = Offset7 = 0; // Initialize offsets
+
+    size_t tLen = preferences.getBytes("thresh", flapThresholds, sizeof(flapThresholds));
+    size_t hLen = preferences.getBytes("hyst", flapHysteresis, sizeof(flapHysteresis));
+    
+    if (tLen != sizeof(flapThresholds) || hLen != sizeof(flapHysteresis)) {
+        for(int i=0; i<7; i++) {
+            flapThresholds[i] = defaultThresholds[i];
+            flapHysteresis[i] = defaultHyst[i];
+        }
+    }
+}
+
+void calculateAndSaveThresholds(uint16_t* recordedValues) {
+    for (int i = 0; i < 7; i++) {
+        flapThresholds[i] = (recordedValues[i] + recordedValues[i+1]) / 2;
+        
+        int gap = abs((int)recordedValues[i+1] - (int)recordedValues[i]);
+        int H = round(gap * 0.10);
+        if (H < 5) H = 5;
+        flapHysteresis[i] = (uint16_t)H;
+    }
+    
+    preferences.putBytes("thresh", flapThresholds, sizeof(flapThresholds));
+    preferences.putBytes("hyst", flapHysteresis, sizeof(flapHysteresis));
+    Serial.println("New Flap Thresholds calculated and saved!");
 }
 
 // Reads one sample and returns the raw (clamped) value.
@@ -68,13 +98,13 @@ void updateFlapSensor() {
     uint16_t newWbkValue; // Use a temporary variable
 
     // Apply hysteresis using offsets
-        if (SensorValue < (458 + 4 * Offset1)) { newWbkValue = (uint16_t)FlapPosition::S1; }
-    else if (SensorValue < 495 + 5 * Offset2) { newWbkValue = (uint16_t)FlapPosition::S; }
-    else if (SensorValue < 545 + 10 * Offset3) { newWbkValue = (uint16_t)FlapPosition::M2; }
-    else if (SensorValue < 590 + 20 * Offset4) { newWbkValue = (uint16_t)FlapPosition::M1; }
-    else if (SensorValue < 810 + 30 * Offset5) { newWbkValue = (uint16_t)FlapPosition::ZERO; }
-    else if (SensorValue < 1150 + 50 * Offset6) { newWbkValue = (uint16_t)FlapPosition::P1; }
-    else if (SensorValue < 1800 + 70 * Offset7) { newWbkValue = (uint16_t)FlapPosition::P2; }
+        if (SensorValue < (flapThresholds[0] + flapHysteresis[0] * Offset1)) { newWbkValue = (uint16_t)FlapPosition::S1; }
+    else if (SensorValue < (flapThresholds[1] + flapHysteresis[1] * Offset2)) { newWbkValue = (uint16_t)FlapPosition::S; }
+    else if (SensorValue < (flapThresholds[2] + flapHysteresis[2] * Offset3)) { newWbkValue = (uint16_t)FlapPosition::M2; }
+    else if (SensorValue < (flapThresholds[3] + flapHysteresis[3] * Offset4)) { newWbkValue = (uint16_t)FlapPosition::M1; }
+    else if (SensorValue < (flapThresholds[4] + flapHysteresis[4] * Offset5)) { newWbkValue = (uint16_t)FlapPosition::ZERO; }
+    else if (SensorValue < (flapThresholds[5] + flapHysteresis[5] * Offset6)) { newWbkValue = (uint16_t)FlapPosition::P1; }
+    else if (SensorValue < (flapThresholds[6] + flapHysteresis[6] * Offset7)) { newWbkValue = (uint16_t)FlapPosition::P2; }
     else { newWbkValue = (uint16_t)FlapPosition::L; }
 
     // Check if value changed

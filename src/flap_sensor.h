@@ -7,5 +7,6 @@
 void initFlapSensor(); // Placeholder if initialization needed
 void updateFlapSensor();
 uint16_t GetSmoothSensorValue(); // Keep internal or expose if needed elsewhere
+void calculateAndSaveThresholds(uint16_t* recordedValues);
 
 #endif // FLAP_SENSOR_H

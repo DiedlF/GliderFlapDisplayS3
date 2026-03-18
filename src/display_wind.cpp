@@ -76,10 +76,13 @@ void drawWind(int InstDir, int InstSpeed, int AvgDir, int AvgSpeed, int Yaw) {
     WindSprite.fillSprite(TFT_BLACK);
 
     // Clamp speeds for drawing
-    if (InstSpeed > 60) InstSpeed = 60;
-    if (InstSpeed < 2) InstSpeed = 2;
-    if (AvgSpeed > 60) AvgSpeed = 60;
-    if (AvgSpeed < 2) AvgSpeed = 2;
+    int drawInstSpeed = InstSpeed;
+    if (drawInstSpeed > 60) drawInstSpeed = 60;
+    if (drawInstSpeed < 2) drawInstSpeed = 2;
+
+    int drawAvgSpeed = AvgSpeed;
+    if (drawAvgSpeed > 60) drawAvgSpeed = 60;
+    if (drawAvgSpeed < 2) drawAvgSpeed = 2;
 
     // Define arrow geometry constants relative to ArrowSprite (200x200) center (100,100)
     const int centerX = 100;
@@ -89,9 +92,9 @@ void drawWind(int InstDir, int InstSpeed, int AvgDir, int AvgSpeed, int Yaw) {
 
     // Calculate points for Average Wind (Blue)
     int avgTipX = centerX;
-    int avgTipY = centerY - (int)(AvgSpeed * WIND_SPEED_DISPLAY_SCALE);
+    int avgTipY = centerY - (int)(drawAvgSpeed * WIND_SPEED_DISPLAY_SCALE);
     int avgBase1X = centerX - baseWidth;
-    int avgBase1Y = centerY + (int)(AvgSpeed * WIND_SPEED_DISPLAY_SCALE);
+    int avgBase1Y = centerY + (int)(drawAvgSpeed * WIND_SPEED_DISPLAY_SCALE);
     int avgBase2X = centerX + baseWidth;
     int avgBase2Y = avgBase1Y; // Same Y as base1
 
@@ -103,9 +106,9 @@ void drawWind(int InstDir, int InstSpeed, int AvgDir, int AvgSpeed, int Yaw) {
 
     // Calculate points for Instant Wind (White)
     int instTipX = centerX;
-    int instTipY = centerY - round(InstSpeed * 1.25 * WIND_SPEED_DISPLAY_SCALE);
+    int instTipY = centerY - round(drawInstSpeed * 1.25 * WIND_SPEED_DISPLAY_SCALE);
     int instBase1X = centerX - baseWidth;
-    int instBase1Y = centerY + round(InstSpeed * 1.25 * WIND_SPEED_DISPLAY_SCALE);
+    int instBase1Y = centerY + round(drawInstSpeed * 1.25 * WIND_SPEED_DISPLAY_SCALE);
     int instBase2X = centerX + baseWidth;
     int instBase2Y = instBase1Y; // Same Y as base1
 
@@ -115,7 +118,7 @@ void drawWind(int InstDir, int InstSpeed, int AvgDir, int AvgSpeed, int Yaw) {
     drawIndentedArrowBase(ArrowSprite, instTipX, instTipY, instBase1X, instBase1Y, instBase2X, instBase2Y, indentDepth, TFT_BLACK); // Draw indentation
     ArrowSprite.pushRotated(&WindSprite, 180 + InstDir - Yaw, TFT_BLACK); // Push with transparency
 
-    // Add text after drawing arrows
+    // Add text after drawing arrows - using original unclipped variables
     WindSprite.setCursor(200, 125);
     WindSprite.printf("%i / %i", AvgSpeed, AvgDir);
 }

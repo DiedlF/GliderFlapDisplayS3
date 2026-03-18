@@ -31,7 +31,7 @@ extern uint16_t TftBrightness;
 extern uint16_t SensorValue;
 
 
-void updateWbkDisplay(uint16_t flapValue) {
+void updateWbkDisplay(uint16_t flapValue, bool isWarning) {
     String SpeedString;
     WbkSprite.fillSprite(TFT_BLACK);
     const uint8_t* bitmapData = nullptr;
@@ -48,11 +48,15 @@ void updateWbkDisplay(uint16_t flapValue) {
         default: SpeedString = "---"; break; // Handle unexpected value
     }
 
+    uint16_t color = isWarning ? TFT_RED : TFT_WHITE;
+
     if (bitmapData) {
-        WbkSprite.drawBitmap(0, 0, bitmapData, 240, 170, TFT_BLACK, TFT_WHITE);
+        WbkSprite.drawBitmap(0, 0, bitmapData, 240, 170, TFT_BLACK, color);
     }
+    WbkSprite.setTextColor(color); // Apply the warning color to text
     WbkSprite.setCursor(30, 220); // Position from original code
     WbkSprite.print(SpeedString);
+    WbkSprite.setTextColor(TFT_WHITE); // Reset text color back to white for other drawings if ever needed
     amoled.pushColors(0, 0, WbkSprite.width(), WbkSprite.height(), (uint16_t *)WbkSprite.getPointer());
 }
 
@@ -164,5 +168,44 @@ void updateInfoDisplay() {
     TftSprite.setCursor(col4, y); TftSprite.printf("SensorValue: %d", SensorValue); y += yStep;
 
     // Push the completed info screen
+    amoled.pushColors(0, 0, TftSprite.width(), TftSprite.height(), (uint16_t *)TftSprite.getPointer());
+}
+
+void updateCalDisplay(CalState state, uint16_t currentSensorValue) {
+    TftSprite.fillSprite(TFT_WHITE); 
+    TftSprite.setTextColor(TFT_BLACK); 
+    TftSprite.setTextFont(4); 
+    TftSprite.setTextSize(1); 
+    
+    int y = 20;
+    TftSprite.setCursor(20, y);
+    TftSprite.print("Flap Calibration");
+    
+    y += 40;
+    TftSprite.setCursor(20, y);
+    switch (state) {
+        case CalState::INIT:      TftSprite.print("Ready? Long Press to Start"); break;
+        case CalState::WAIT_S1:   TftSprite.print("Move Flap to S1 (-x)"); break;
+        case CalState::WAIT_S:    TftSprite.print("Move Flap to S (-x)"); break;
+        case CalState::WAIT_M2:   TftSprite.print("Move Flap to M2 (-2)"); break;
+        case CalState::WAIT_M1:   TftSprite.print("Move Flap to M1 (-1)"); break;
+        case CalState::WAIT_ZERO: TftSprite.print("Move Flap to ZERO (0)"); break;
+        case CalState::WAIT_P1:   TftSprite.print("Move Flap to P1 (+1)"); break;
+        case CalState::WAIT_P2:   TftSprite.print("Move Flap to P2 (+2)"); break;
+        case CalState::WAIT_L:    TftSprite.print("Move Flap to L (+x)"); break;
+        case CalState::DONE:      TftSprite.print("Calculation Done!"); break;
+    }
+    
+    if (state != CalState::INIT && state != CalState::DONE) {
+        y += 40;
+        TftSprite.setCursor(20, y);
+        TftSprite.printf("Sensor Value: %d", currentSensorValue);
+        
+        y += 40;
+        TftSprite.setTextFont(2);
+        TftSprite.setCursor(20, y);
+        TftSprite.print("Long press button to confirm.");
+    }
+    
     amoled.pushColors(0, 0, TftSprite.width(), TftSprite.height(), (uint16_t *)TftSprite.getPointer());
 }

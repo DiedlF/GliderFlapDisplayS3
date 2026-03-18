@@ -12,9 +12,11 @@
 // Define Enums for Modes and Flap Positions
 enum class Mode : uint16_t {
     STANDARD = 0,
-    INFO = 1
-    // Add other modes here if needed
+    INFO = 1,
+    CAL = 2
 };
+
+enum class CalState : uint8_t { INIT, WAIT_S1, WAIT_S, WAIT_M2, WAIT_M1, WAIT_ZERO, WAIT_P1, WAIT_P2, WAIT_L, DONE };
 
 enum class FlapPosition : uint16_t {
     UNKNOWN = 0, // Or a default/error state
@@ -73,6 +75,12 @@ extern uint16_t TftBrightness;
 extern bool BrightnessChanged;
 extern bool LarusWindChanged;
 extern uint16_t LarusWindSpeedInst, LarusWindDirInst, LarusWindSpeedAvg, LarusWindDirAvg;
+
+// Calibration tracking
+extern CalState calState;
+extern volatile bool calConfirmPressed;
+extern uint16_t flapThresholds[7];
+extern uint16_t flapHysteresis[7];
 
 // SD Card related
 extern bool sdAvail;
