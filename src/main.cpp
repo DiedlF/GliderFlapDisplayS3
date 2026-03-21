@@ -239,29 +239,36 @@ void loop() {
       if (currentWbkValue >= 1 && currentWbkValue <= 5) {
           int airSpeed = -1;
           
-          // Determine best available density ratio based on Larus or LXWP0 data
           float densityRatio = -1.0f;
-          if (strlen(LarusAirDensity.value()) > 0) {
+          float alt = -10000.0f;
+          
+          // Use Larus Air Density if available (Unit is g/m^3, standard SL is 1225 g/m^3)
+          if (LarusAirDensity.isValid() && LarusAirDensity.age() < 3000 && strlen(LarusAirDensity.value()) > 0) {
               float density = atof(LarusAirDensity.value());
-              if (density > 0.1f) densityRatio = density / 1.225f; // Standard SL density
-          }
-          if (densityRatio < 0.0f && strlen(LarusAltitude.value()) > 0) {
-              float alt = atof(LarusAltitude.value()); // meters
-              if (alt > -1000.0f && alt < 10000.0f) densityRatio = pow(1.0f - 0.0000225577f * alt, 4.2561f);
-          }
-          if (densityRatio < 0.0f && strlen(lxwp0Alt.value()) > 0) {
-              float alt = atof(lxwp0Alt.value()); // meters
-              if (alt > -1000.0f && alt < 10000.0f) densityRatio = pow(1.0f - 0.0000225577f * alt, 4.2561f);
+              if (density > 100.0f) densityRatio = density / 1225.0f; 
           }
 
-          if (strlen(LarusSpeed.value()) > 0) {
+          // Fallback to Altitude to estimate density ratio using ISA standard atmosphere model.
+          if (densityRatio < 0.0f) {
+              if (LarusAltitude.isValid() && LarusAltitude.age() < 3000 && strlen(LarusAltitude.value()) > 0) {
+                  alt = atof(LarusAltitude.value()); // meters
+              } else if (lxwp0Alt.isValid() && lxwp0Alt.age() < 3000 && strlen(lxwp0Alt.value()) > 0) {
+                  alt = atof(lxwp0Alt.value()); // meters
+              }
+
+              if (alt > -1000.0f && alt < 10000.0f) {
+                  densityRatio = pow(1.0f - 0.0000225577f * alt, 4.2561f);
+              }
+          }
+
+          if (LarusSpeed.isValid() && LarusSpeed.age() < 3000 && strlen(LarusSpeed.value()) > 0) {
               float tas = atof(LarusSpeed.value());
-              if (tas > 0) airSpeed = (densityRatio > 0.0f) ? (int)(tas * sqrt(densityRatio)) : (int)tas;
+              if (tas > 0) airSpeed = (densityRatio > 0.0f) ? (int)round(tas * sqrt(densityRatio)) : (int)round(tas);
           }
           
-          if (airSpeed == -1 && strlen(lxwp0Speed.value()) > 0) {
+          if (airSpeed == -1 && lxwp0Speed.isValid() && lxwp0Speed.age() < 3000 && strlen(lxwp0Speed.value()) > 0) {
               float tas = atof(lxwp0Speed.value());
-              if (tas > 0) airSpeed = (densityRatio > 0.0f) ? (int)(tas * sqrt(densityRatio)) : (int)tas;
+              if (tas > 0) airSpeed = (densityRatio > 0.0f) ? (int)round(tas * sqrt(densityRatio)) : (int)round(tas);
           }
 
           if (airSpeed > 0) {
