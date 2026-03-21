@@ -65,6 +65,8 @@ uint16_t TftBrightness = 255;
 bool BrightnessChanged = false;
 bool LarusWindChanged = true; // Start true to force initial draw
 uint16_t LarusWindSpeedInst = 0, LarusWindDirInst = 0, LarusWindSpeedAvg = 0, LarusWindDirAvg = 0;
+CalState calState = CalState::INIT;
+volatile bool calConfirmPressed = false;
 
 // SD Card related
 bool sdAvail = false;
@@ -236,13 +238,30 @@ void loop() {
       bool currentWarningCondition = false;
       if (currentWbkValue >= 1 && currentWbkValue <= 5) {
           int airSpeed = -1;
-          if (strlen(LarusSpeed.value()) > 0) {
-              float s = atof(LarusSpeed.value());
-              if (s > 0) airSpeed = (int)s;
+          
+          // Determine best available density ratio based on Larus or LXWP0 data
+          float densityRatio = -1.0f;
+          if (strlen(LarusAirDensity.value()) > 0) {
+              float density = atof(LarusAirDensity.value());
+              if (density > 0.1f) densityRatio = density / 1.225f; // Standard SL density
           }
+          if (densityRatio < 0.0f && strlen(LarusAltitude.value()) > 0) {
+              float alt = atof(LarusAltitude.value()); // meters
+              if (alt > -1000.0f && alt < 10000.0f) densityRatio = pow(1.0f - 0.0000225577f * alt, 4.2561f);
+          }
+          if (densityRatio < 0.0f && strlen(lxwp0Alt.value()) > 0) {
+              float alt = atof(lxwp0Alt.value()); // meters
+              if (alt > -1000.0f && alt < 10000.0f) densityRatio = pow(1.0f - 0.0000225577f * alt, 4.2561f);
+          }
+
+          if (strlen(LarusSpeed.value()) > 0) {
+              float tas = atof(LarusSpeed.value());
+              if (tas > 0) airSpeed = (densityRatio > 0.0f) ? (int)(tas * sqrt(densityRatio)) : (int)tas;
+          }
+          
           if (airSpeed == -1 && strlen(lxwp0Speed.value()) > 0) {
-              float s = atof(lxwp0Speed.value());
-              if (s > 0) airSpeed = (int)s;
+              float tas = atof(lxwp0Speed.value());
+              if (tas > 0) airSpeed = (densityRatio > 0.0f) ? (int)(tas * sqrt(densityRatio)) : (int)tas;
           }
 
           if (airSpeed > 0) {
